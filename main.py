@@ -30,9 +30,11 @@ def start():
   # TASK_ID   = <task_id>    -> the task ID that is being looked at.
   # DIAG_MODE = CONNECTIVITY -> this checks endpoint and DNS tests for the specified endpoint in the ENDPOINT and PORT environment variables.
   # ENDPOINT = <endpoint>    -> the endpoint that will be connected to.
+  # PORT = <port>            -> the port that will be connected to. This works with the ENDPOINT environment variable
   # LOGS_S3_ENDPOINT         -> the S3 logs uploader endpoint that the script should push the zip file to.
   ##########################################################################################
 
+  # add health check diag mode
   diag_mode = check_diag_mode()
   if diag_mode:
     #check infra
@@ -51,18 +53,45 @@ def start():
         endpoints = get_ecs_endpoints(get_region())
         for endpoint in endpoints:
           connectivity_tests(endpoint, 443)
-        #check_logs()
+        check_logs()
+      
       elif diag_mode == 'TASK':
         task_id = os.environ['TASK_ID']
         a_logger.debug("Collecting events for task ID: "+task_id)
         #need to check its in all log files on the instance
-        ecs_log_file = get_latest_file(ecs_logs_path+'/ecs/')
-        get_task_events(task_id, ecs_log_file)
+        ecs_log_file = get_latest_ecs_agent_log_file(ecs_logs_path+'/ecs/')
+        get_events(task_id, ecs_log_file)
+      
+      elif diag_mode == 'CONNECTIVITY':
+        endpoint = os.environ['ENDPOINT']
+        if 'PORT' in os.environ:
+          port = os.environ['PORT']
+        else:
+          a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
+        connectivity_tests(endpoint, 443)
     else:
       a_logger.debug("## This is running on Fargate")
       a_logger.debug(" ")
       #fargate_checks()
 
+def check_logs():
+  a_logger.debug('## Checking the latest ECS agent logs.')
+  try:
+    latest_agent_log = get_latest_ecs_agent_log_file(ecs_logs_path+'/ecs/')
+    # Filter for any errors
+    errors = ['Error', 'error', 'Failed', 'failed', 'Timeout', 'timeout', 'Refused', 'refused']
+    log_events = ''
+    for error in errors:
+      log_events = log_events + get_events(error,latest_agent_log)
+    if log_events == '':
+      message = "There are no errors in the ECS agent logs..."
+      a_logger.debug("## The following errors are in the ECS agent logs: "+latest_agent_log+" \n"+message)
+    else:
+      a_logger.debug("## The following errors are in the ECS agent logs: \n"+log_events)
+
+    a_logger.debug("## End of ECS log events ##")
+  except Exception as e:
+    a_logger.debug("Unable to get the latest ECS agent log file or filter the agent logs "+ str(e))
 
 def get_region():
   #currently not supporting version 2
@@ -80,8 +109,6 @@ def get_region():
   except Exception as e:
     a_logger.debug("Error in getting metadata URI: "+str(e))
 
-  a_logger.debug(requests.get(task_metadata_endpoint))
-  a_logger.debug(type(requests.get(task_metadata_endpoint)))
   try:
     task_metadata = requests.get(task_metadata_endpoint).json()
   except Exception as e:
@@ -98,15 +125,17 @@ def get_ecs_endpoints(region):
   ]
   return ecs_endpoints
 
-def get_task_events(task_id,ecs_log_file):
+def get_events(substring,ecs_log_file):
   log_line = ''
   with open(ecs_log_file) as openfile:
     for line in openfile:
-      if task_id in line:
+      if substring in line:
         log_line = log_line + line + "\n"
 
-  with open("/tmp/task_events.log", "w") as writer:
+  with open("/tmp/"+substring+"_events.log", "w") as writer:
     writer.write(log_line)
+  
+  return log_line
 
 def check_diag_mode():
   try:
@@ -182,7 +211,7 @@ def agent_running_check():
 
 #check if task ID env variable is set to narrow down log file filtering 
 
-def get_latest_file(path):
+def get_latest_ecs_agent_log_file(path):
   if os.path.exists(path):
     list_of_files = os.listdir(path)
     full_path = [path+"{0}".format(x) for x in list_of_files]
