@@ -1,0 +1,68 @@
+{
+    "containerDefinitions": [
+      {
+
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/ecs/autodiag",
+            "awslogs-region": "us-east-1",
+            "awslogs-stream-prefix": "ecs"
+          }
+        },
+        "cpu": 0,
+        "environment": [
+          {
+            "name": "DIAG_MODE",
+            "value": "GENERAL"
+          }
+        ],
+        "mountPoints": [
+          {
+            "containerPath": "/var/run/docker.sock",
+            "sourceVolume": "docker"
+          },
+          {
+            "containerPath": "/var/log",
+            "sourceVolume": "logs"
+          },
+          {
+            "containerPath": "/etc/config",
+            "sourceVolume": "config"
+          }
+        ],
+        "memory": 128,
+        "image": "public.ecr.aws/r0n3d3u5/ecs-autodiag:v1.0",
+        "name": "autodiag"
+      }
+    ],
+    "taskRoleArn": "arn:aws:iam::account-id:role/ecsTaskRole",
+    "compatibilities": [
+      "EXTERNAL",
+      "EC2"
+    ],
+    "family": "autodiag",
+    "requiresCompatibilities": [
+      "EC2"
+    ],
+    "volumes": [
+      {
+        "name": "docker",
+        "host": {
+          "sourcePath": "/var/run/docker.sock"
+        }
+      },
+      {
+        "name": "logs",
+        "host": {
+          "sourcePath": "/var/log"
+        }
+      },
+      {
+        "name": "config",
+        "host": {
+          "sourcePath": "/etc/ecs"
+        }
+      }
+    ]
+  }

@@ -36,6 +36,12 @@ def start():
   diag_mode = check_diag_mode()
   if diag_mode:
     #check infra
+    env_vars = ''
+    a_logger.debug("## The environment variables set in the diag container are: ")
+    for var in os.environ:
+        env_vars = env_vars + var + "\n"
+    a_logger.debug(env_vars)
+
     infra = check_infra()
     if infra == "AWS_ECS_EC2":
       a_logger.debug("## This is running on EC2 ##")
@@ -57,11 +63,33 @@ def start():
       a_logger.debug(" ")
       #fargate_checks()
 
-# assuming task metadata v4
+
 def get_region():
-  #task_metadata_endpoint = str(os.environ["ECS_CONTAINER_METADATA_URI_V4"])+"/task"
-  #task_metadata = json.loads(requests.get(task_metadata_endpoint))
-  return 'us-east-1'
+  #currently not supporting version 2
+  try:
+    #metadata version 4
+    if "ECS_CONTAINER_METADATA_URI_V4" in os.environ:
+      env_variable = "ECS_CONTAINER_METADATA_URI_V4"
+    
+    #metadata version 3
+    elif "ECS_CONTAINER_METADATA_URI" in os.environ:
+      env_variable = "ECS_CONTAINER_METADATA_URI"
+
+    task_metadata_endpoint = str(os.environ[env_variable])+"/task"
+
+  except Exception as e:
+    a_logger.debug("Error in getting metadata URI: "+str(e))
+
+  a_logger.debug(requests.get(task_metadata_endpoint))
+  a_logger.debug(type(requests.get(task_metadata_endpoint)))
+  try:
+    task_metadata = requests.get(task_metadata_endpoint).json()
+  except Exception as e:
+    a_logger.debug("Error accessing metadata: "+str(e))
+
+  task_arn = task_metadata['TaskARN']
+  region = task_arn.split(':')[3]
+  return region
 
 def get_ecs_endpoints(region):
   ecs_endpoints = [
@@ -120,8 +148,6 @@ def list_ecs_log_files(path):
 #connectivity tests
 def connectivity_tests(endpoint,port):
   a_logger.debug("## Starting connectivity tests... ##")
-  a_logger.debug("...")
-  a_logger.debug("...")
   try:
     a_logger.debug("-> Testing https://"+endpoint)
     tn = telnetlib.Telnet(ecs_endpoint,port=port)
