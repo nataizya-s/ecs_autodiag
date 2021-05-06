@@ -55,7 +55,7 @@ def start():
     else:
       a_logger.debug("## This is running on Fargate")
       a_logger.debug(" ")
-      fargate_checks()
+      #fargate_checks()
 
 # assuming task metadata v4
 def get_region():
