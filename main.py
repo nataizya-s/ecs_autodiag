@@ -27,13 +27,8 @@ def start():
   # add mysql connection test with credentials
   diag_mode = check_diag_mode()
   if diag_mode:
-    #check infra
-    env_vars = ''
-    a_logger.debug("## The environment variables set in the diag container are: ")
-    for var in os.environ:
-        env_vars = env_vars + var + "\n"
-    a_logger.debug(env_vars)
 
+    #check infra
     infra = check_infra()
     if infra == "AWS_ECS_EC2":
       
@@ -41,6 +36,12 @@ def start():
       a_logger.debug(" ")
 
       if diag_mode == 'GENERAL':
+        env_vars = ''
+        a_logger.debug("## The environment variables set in the diag container are: ")
+        for var in os.environ:
+            env_vars = env_vars + var + "\n"
+        a_logger.debug(env_vars)
+
         a_logger.debug("## DIAG_MODE = GENERAL. Performing GENERAL dignosis checks.")
 
         ec2_checks()
@@ -79,9 +80,11 @@ def start():
         endpoint = os.environ['ENDPOINT']
         if 'PORT' in os.environ:
           port = os.environ['PORT']
+        
+          connectivity_tests(endpoint, port)
         else:
           a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
-        connectivity_tests(endpoint, 443)
+        
 
       #Current supported traffic is HTTP
       elif diag_mode == 'HEALTHCHECK':
@@ -210,9 +213,9 @@ def list_ecs_log_files(path):
 def connectivity_tests(endpoint,port):
   a_logger.debug("## Starting connectivity tests... ##")
   try:
-    a_logger.debug("-> Testing https://"+endpoint)
+    a_logger.debug("-> Testing "+endpoint)
     tn = telnetlib.Telnet(ecs_endpoint,port=port)
-    a_logger.debug("  -> Successfully connected to: https://"+endpoint)
+    a_logger.debug("  -> Successfully connected to: "+endpoint)
   except Exception as error:
       a_logger.debug("-> Connection to endpoint"+endpoint+" failed with: "+str(error))
   
