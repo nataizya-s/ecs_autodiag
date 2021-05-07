@@ -7,6 +7,7 @@ import subprocess
 import requests
 import json
 import socket
+import time
 
 a_logger = logging.getLogger()
 a_logger.setLevel(logging.DEBUG)
@@ -84,14 +85,38 @@ def start():
         else:
           a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
         
-
       #Current supported traffic is HTTP
       elif diag_mode == 'HEALTHCHECK':
-        a_logger.debug("## DIAG_MODE = HEALTHCHECK. Performing task specific dignosis checks.")
+        a_logger.debug("## DIAG_MODE = HEALTHCHECK. Performing 3 health checks with 10 seconds between each one.")
+        if 'ENDPOINT' in os.environ and 'PROTOCOL' in os.environ:
+          endpoint = os.environ['ENDPOINT']
+          protocol = os.environ['PROTOCOL']
+          healthchecks(endpoint, protocol)
+        elif 'ENDPOINT' not in os.environ:
+          a_logger.debug("Please specify the ENDPOINT environment variable.")
+        elif 'PROTOCOL' not in os.environ:
+          a_logger.debug("Please specify the PROTOCOL environment variable.")
 
     else:
       a_logger.debug("## This is running on Fargate")
       #fargate_checks()
+    
+    a_logger.debug("#### DIAG COMPLETE ####")
+
+def healthchecks(endpoint, protocol):
+  dns_resol = dns_check(endpoint)
+  if dns_resol:
+    if protocol == 'http' or protocol == 'https':
+      try:
+        endpoint = protocol+'://'+endpoint
+        for hc in range(1,4):
+          response_code = requests.get(endpoint).status_code
+          a_logger.debug("Health check ["+str(hc)+"]: Status Code "+str(response_code))
+          time.sleep(10)
+      except Exception as e:
+         a_logger.debug("Failed to run healthcheck request. "+ str(e))
+  else:
+    a_logger.debug("DNS resolution for "+endpoint+" failed.")
 
 def get_all_ecs_log_files(path):
   ecs_agent_log_files = []  
@@ -207,11 +232,7 @@ def list_ecs_log_files(path):
     file_str = file_str + file +"\n"
   a_logger.debug(file_str)
 
-#connectivity tests
-def connectivity_tests(endpoint,port):
-  a_logger.debug("## Starting connectivity tests... ##")
-  a_logger.debug("-> Checking DNS resolution...")
-  
+def dns_check(endpoint):
   dns_resol = False
   try:
     addr = socket.gethostbyname(endpoint)
@@ -219,6 +240,14 @@ def connectivity_tests(endpoint,port):
     dns_resol = True
   except Exception as error:
       a_logger.debug("-> DNS resolution of endpoint"+endpoint+" failed with: "+str(error))
+  
+  return dns_resol
+#connectivity tests
+def connectivity_tests(endpoint,port):
+  a_logger.debug("## Starting connectivity tests... ##")
+  a_logger.debug("-> Checking DNS resolution...")
+  
+  dns_resol = dns_check(endpoint)
 
   if dns_resol:
     try:
