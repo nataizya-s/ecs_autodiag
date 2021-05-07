@@ -23,7 +23,7 @@ This project was designed to enable troubleshooting on the ECS infrastructure. T
 | ------------- | ------------- | ------------- | ------------- |
 | DIAG_MODE  | `GENERAL` | This does general checks on the container instance looking for errors in log files | N/A |
 | DIAG_MODE | `TASK` | This checks the ECS agent logs for specific events relating to the TASK ID. TASK_ID must also be specified. | `TASK_ID`|
-| TASK_ID | `<task_id>` | The task ID that is being looked at. Seeing as the TASK diagnsis mode does not check the validity of the task ID, any substring can be used in place of the `task_id` and Autodiag will filter the logs for the substring specified. |
+| TASK_ID | `<task_id>` | The task ID that is being looked at. Seeing as the TASK diagnsis mode does not check the validity of the task ID, any substring can be used in place of the `task_id` and Autodiag will filter the logs for the substring specified. | N/A |
 | DIAG_MODE | CONNECTIVITY | This checks endpoint and DNS tests for the specified endpoint in the ENDPOINT and PORT environment variables. | `ENDPOINT`, `PORT` |
 | ENDPOINT | `<endpoint1>` | The endpoint that the connectivity tests will be done on. | `HEALTHCHECK` or `CONNECTIVITY`|
 | PORT | `<port>` | The port that will be connected to. This works with the ENDPOINT environment variable. | `ENDPOINT` |
