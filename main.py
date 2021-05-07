@@ -22,19 +22,9 @@ ecs_config_path = '/etc/ecs'
 ecs_logs_path = '/var/log'
 
 def start():
-  ##########################################################################################
-  # Supported environment variables
-  ##########################################################################################
-  # DIAG_MODE = GENERAL      -> this does general checks on the container instance looking for errors in log files
-  # DIAG_MODE = TASK         -> this checks the ECS agent logs for specific events relating to the TASK ID. TASK_ID must also be specified.
-  # TASK_ID   = <task_id>    -> the task ID that is being looked at.
-  # DIAG_MODE = CONNECTIVITY -> this checks endpoint and DNS tests for the specified endpoint in the ENDPOINT and PORT environment variables.
-  # ENDPOINT = <endpoint>    -> the endpoint that will be connected to.
-  # PORT = <port>            -> the port that will be connected to. This works with the ENDPOINT environment variable
-  # LOGS_S3_ENDPOINT         -> the S3 logs uploader endpoint that the script should push the zip file to.
-  ##########################################################################################
 
-  # add health check diag mode
+  # add health check diag mode and ability to filter logs for a particular word
+  # add mysql connection test with credentials
   diag_mode = check_diag_mode()
   if diag_mode:
     #check infra
@@ -46,21 +36,44 @@ def start():
 
     infra = check_infra()
     if infra == "AWS_ECS_EC2":
+      
       a_logger.debug("## This is running on EC2 ##")
       a_logger.debug(" ")
+
       if diag_mode == 'GENERAL':
+        a_logger.debug("## DIAG_MODE = GENERAL. Performing GENERAL dignosis checks.")
+
         ec2_checks()
+        
         endpoints = get_ecs_endpoints(get_region())
+
+        #check connectivity to ECS service endpoints.
         for endpoint in endpoints:
           connectivity_tests(endpoint, 443)
+
         check_logs()
       
       elif diag_mode == 'TASK':
+        a_logger.debug("## DIAG_MODE = TASK_ID. Performing task specific dignosis checks.")
+
         task_id = os.environ['TASK_ID']
+
         a_logger.debug("Collecting events for task ID: "+task_id)
+
         #need to check its in all log files on the instance
         ecs_log_file = get_latest_ecs_agent_log_file(ecs_logs_path+'/ecs/')
-        get_events(task_id, ecs_log_file)
+        a_logger.debug(ecs_log_file)
+        log_files = get_all_ecs_log_files(ecs_logs_path+'/ecs/')
+        a_logger.debug("## Checking events for task in the latest log file...")
+        a_logger.debug(get_events(task_id,ecs_log_file))
+        a_logger.debug("## Checking events for task in the other agent log files...")
+
+        a_logger.debug("The agent log files on the instance are "+str(log_files))
+        if log_files:
+          for log_file in log_files:
+            a_logger.debug(get_events(task_id, log_file))
+        else:
+          a_logger.debug("No log files exist on the instance.")
       
       elif diag_mode == 'CONNECTIVITY':
         endpoint = os.environ['ENDPOINT']
@@ -69,10 +82,29 @@ def start():
         else:
           a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
         connectivity_tests(endpoint, 443)
+
+      #Current supported traffic is HTTP
+      elif diag_mode == 'HEALTHCHECK':
+        a_logger.debug("## DIAG_MODE = HEALTHCHECK. Performing task specific dignosis checks.")
+
     else:
       a_logger.debug("## This is running on Fargate")
       a_logger.debug(" ")
       #fargate_checks()
+
+def get_all_ecs_log_files(path):
+  ecs_agent_log_files = []  
+  if os.path.exists(path):
+    list_of_files = os.listdir(path)
+    full_path = [path+"{0}".format(x) for x in list_of_files]
+    
+    for file in full_path:
+      if 'ecs-agent' in file:
+        ecs_agent_log_files.append(file)
+    return ecs_agent_log_files
+  else:
+    latest_agent_log = "Path does not exist."
+    return ecs_agent_log_files
 
 def check_logs():
   a_logger.debug('## Checking the latest ECS agent logs.')

@@ -10,12 +10,17 @@ This project was designed to enable troubleshooting on the ECS infrastructure. T
 | ------------- | ------------- | ------------- |
 | DIAG_MODE  | GENERAL | This does general checks on the container instance looking for errors in log files |
 | DIAG_MODE | TASK | This checks the ECS agent logs for specific events relating to the TASK ID. TASK_ID must also be specified. |
-| TASK_ID | `task_id` | The task ID that is being looked at. |
+| TASK_ID | `task_id` | The task ID that is being looked at. Seeing as the TASK diagnsis mode does not check the validity of the task ID, any substring can be used in place of the `task_id` and Autodiag will filter the logs for the substring specified. |
 | DIAG_MODE | CONNECTIVITY | This checks endpoint and DNS tests for the specified endpoint in the ENDPOINT and PORT environment variables. |
 | PORT | `port` | The port that will be connected to. This works with the ENDPOINT environment variable. |
 | ENDPOINT | ['`endpoint1`', '`endpoint2`'] | A list of endpoints that the connectivity tests will be done on. |
 | S3_LOGS_ENDPOINT | `endpoint` | The S3 logs uploader endpoint that the script should push the zip file to. This is shared by AWS Support. |
-| DIAG_MODE | HEALTH CHECK | Sends a request against the specified IP and path and returns the response code. |
+| DIAG_MODE | HEALTHCHECK | Sends a request against the specified IP and path and returns the response code. |
+| DIAG_MODE | MYSQL_CONNECTION | Connects to the specified MYSQL database. This environment variable requires the database connection environment variables USER, PASSWORD, HOST and DATABASE. Note that DB credentials should not be passed in plain text. Rather use secrets or parameter store as specified in the [ECS documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html) |
+| USER | `user` | The database user. |
+| PASSWORD | `password` | The database password. |
+| USER | `host` | The database host. |
+| USER | `database` | The database name. |
 
 ## Task Definition
 The task definition needs to specify the environment variables and mounts. The environment variables are described in the `Environment variables` section. The bind mounts need to be specified as follows:
