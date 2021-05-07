@@ -15,7 +15,7 @@ This project was designed to enable troubleshooting on the ECS infrastructure. T
 | ENDPOINT | `endpoint1` | The endpoint that the connectivity tests will be done on. |
 | PORT | `port` | The port that will be connected to. This works with the ENDPOINT environment variable. |
 | S3_LOGS_ENDPOINT | `endpoint` | The S3 logs uploader endpoint that the script should push the zip file to. This is shared by AWS Support. |
-| DIAG_MODE | HEALTHCHECK | Sends a request against the specified IP and path and returns the response code. The ENDPOINT and PROTOCOL environment variables must also be set. |
+| DIAG_MODE | HEALTHCHECK | Sends a request against the specified IP and path and returns the response code. The ENDPOINT, PORT and PROTOCOL environment variables must also be set. |
 | PROTOCOL | `http`,`https` | Sends a request against the specified IP and path and returns the response code. The ENDPOINT and PROTOCOL environment variables must also be set. |
 | DIAG_MODE | MYSQL_CONNECTION | Connects to the specified MYSQL database. This environment variable requires the database connection environment variables USER, PASSWORD, HOST and DATABASE. Note that DB credentials should not be passed in plain text. Rather use secrets or parameter store as specified in the [ECS documentation](https://docs.aws.amazon.com/AmazonECS/latest/developerguide/specifying-sensitive-data-secrets.html) |
 | USER | `user` | The database user. |

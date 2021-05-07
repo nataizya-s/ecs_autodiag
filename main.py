@@ -88,14 +88,17 @@ def start():
       #Current supported traffic is HTTP
       elif diag_mode == 'HEALTHCHECK':
         a_logger.debug("## DIAG_MODE = HEALTHCHECK. Performing 3 health checks with 10 seconds between each one.")
-        if 'ENDPOINT' in os.environ and 'PROTOCOL' in os.environ:
+        if 'ENDPOINT' in os.environ and 'PROTOCOL' in os.environ and 'PORT' in os.environ:
           endpoint = os.environ['ENDPOINT']
           protocol = os.environ['PROTOCOL']
-          healthchecks(endpoint, protocol)
+          port = os.environ['PORT']
+          healthchecks(endpoint, protocol,port)
         elif 'ENDPOINT' not in os.environ:
           a_logger.debug("Please specify the ENDPOINT environment variable.")
         elif 'PROTOCOL' not in os.environ:
           a_logger.debug("Please specify the PROTOCOL environment variable.")
+        elif 'PORT' not in os.environ:
+          a_logger.debug("Please specify the PORT environment variable.")
 
     else:
       a_logger.debug("## This is running on Fargate")
@@ -103,12 +106,12 @@ def start():
     
     a_logger.debug("#### DIAG COMPLETE ####")
 
-def healthchecks(endpoint, protocol):
+def healthchecks(endpoint, protocol, port):
   dns_resol = dns_check(endpoint)
   if dns_resol:
     if protocol == 'http' or protocol == 'https':
       try:
-        endpoint = protocol+'://'+endpoint
+        endpoint = protocol+'://'+endpoint+":"+str(port)
         for hc in range(1,4):
           response_code = requests.get(endpoint).status_code
           a_logger.debug("Health check ["+str(hc)+"]: Status Code "+str(response_code))
