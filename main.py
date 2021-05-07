@@ -6,6 +6,7 @@ import telnetlib
 import subprocess
 import requests
 import json
+import socket
 
 a_logger = logging.getLogger()
 a_logger.setLevel(logging.DEBUG)
@@ -33,7 +34,6 @@ def start():
     if infra == "AWS_ECS_EC2":
       
       a_logger.debug("## This is running on EC2 ##")
-      a_logger.debug(" ")
 
       if diag_mode == 'GENERAL':
         env_vars = ''
@@ -80,7 +80,6 @@ def start():
         endpoint = os.environ['ENDPOINT']
         if 'PORT' in os.environ:
           port = os.environ['PORT']
-        
           connectivity_tests(endpoint, port)
         else:
           a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
@@ -92,7 +91,6 @@ def start():
 
     else:
       a_logger.debug("## This is running on Fargate")
-      a_logger.debug(" ")
       #fargate_checks()
 
 def get_all_ecs_log_files(path):
@@ -212,12 +210,23 @@ def list_ecs_log_files(path):
 #connectivity tests
 def connectivity_tests(endpoint,port):
   a_logger.debug("## Starting connectivity tests... ##")
+  a_logger.debug("-> Checking DNS resolution...")
+  
+  dns_resol = False
   try:
-    a_logger.debug("-> Testing "+endpoint)
-    tn = telnetlib.Telnet(ecs_endpoint,port=port)
-    a_logger.debug("  -> Successfully connected to: "+endpoint)
+    addr = socket.gethostbyname(endpoint)
+    a_logger.debug("Endpoint resolves to: "+addr)
+    dns_resol = True
   except Exception as error:
-      a_logger.debug("-> Connection to endpoint"+endpoint+" failed with: "+str(error))
+      a_logger.debug("-> DNS resolution of endpoint"+endpoint+" failed with: "+str(error))
+
+  if dns_resol:
+    try:
+      a_logger.debug("-> Testing "+endpoint)
+      tn = telnetlib.Telnet(ecs_endpoint,port=port)
+      a_logger.debug("  -> Successfully connected to: "+endpoint)
+    except Exception as error:
+        a_logger.debug("-> Connection to endpoint"+endpoint+" failed with: "+str(error))
   
 #check if agent is running
 def agent_running_check():
