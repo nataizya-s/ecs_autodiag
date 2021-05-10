@@ -1,0 +1,29 @@
+{
+    "containerDefinitions": [
+      {
+
+        "logConfiguration": {
+          "logDriver": "awslogs",
+          "options": {
+            "awslogs-group": "/ecs/autodiag",
+            "awslogs-region": "us-east-1",
+            "awslogs-stream-prefix": "ecs"
+          }
+        },
+        "cpu": 0,
+        "environment": [
+          {
+            "name": "DIAG_MODE",
+            "value": "GENERAL"
+          }
+        ],
+        "memory": 128,
+        "image": "public.ecr.aws/r0n3d3u5/ecs-autodiag:v1.0",
+        "name": "autodiag"
+      }
+    ],
+    "family": "autodiag",
+    "requiresCompatibilities": [
+      "FARGATE"
+    ]
+  }

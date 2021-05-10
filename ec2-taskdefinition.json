@@ -36,11 +36,6 @@
         "name": "autodiag"
       }
     ],
-    "taskRoleArn": "arn:aws:iam::account-id:role/ecsTaskRole",
-    "compatibilities": [
-      "EXTERNAL",
-      "EC2"
-    ],
     "family": "autodiag",
     "requiresCompatibilities": [
       "EC2"

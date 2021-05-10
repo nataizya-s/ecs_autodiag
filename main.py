@@ -29,25 +29,7 @@ def start():
 
       if diag_mode == 'GENERAL':
 
-        env_vars = ''
-        a_logger.debug("## The environment variables set in the diag container are: ")
-
-        for var in os.environ:
-            env_vars = env_vars + var + "\n"
-
-        a_logger.debug(env_vars)
-
-        a_logger.debug("## DIAG_MODE = GENERAL. Performing GENERAL dignosis checks.")
-
-        ec2_checks()
-        
-        endpoints = get_ecs_endpoints(get_region())
-
-        #check connectivity to ECS service endpoints.
-        for endpoint in endpoints:
-          connectivity_tests(endpoint, 443)
-
-        check_logs()
+        general_workflow(infra, diag_mode)
       
       elif diag_mode == 'TASK':
         a_logger.debug("## DIAG_MODE = TASK_ID. Performing task specific dignosis checks.")
@@ -75,70 +57,106 @@ def start():
           a_logger.debug("No log files exist on the instance.")
       
       elif diag_mode == 'CONNECTIVITY':
-
-        endpoint = os.environ['ENDPOINT']
-
-        if 'PORT' in os.environ:
-
-          port = os.environ['PORT']
-          connectivity_tests(endpoint, port)
-
-        else:
-          a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
+        connectivity_workflow()
         
       #Current supported traffic is HTTP
       elif diag_mode == 'HEALTHCHECK':
-
-        a_logger.info("## DIAG_MODE = HEALTHCHECK. Performing 3 health checks with 10 seconds between each one.")
-
-        if 'ENDPOINT' in os.environ and 'PROTOCOL' in os.environ and 'PORT' in os.environ:
-
-          endpoint = os.environ['ENDPOINT']
-          protocol = os.environ['PROTOCOL']
-          port = os.environ['PORT']
-
-          healthchecks(endpoint, protocol,port)
-
-        if 'ENDPOINT' not in os.environ:
-          a_logger.debug("Please specify the ENDPOINT environment variable.")
-        if 'PROTOCOL' not in os.environ:
-          a_logger.debug("Please specify the PROTOCOL environment variable.")
-        if 'PORT' not in os.environ:
-          a_logger.debug("Please specify the PORT environment variable.")
-
+        healthcheck_workflow()
+        
       elif diag_mode == 'MYSQL_CONNECTION':
+        mysql_workflow()
+        
+    
+    elif infra == "AWS_ECS_FARGATE":
+      if diag_mode == "GENERAL":
+        general_workflow(infra, diag_mode)
+      if diag_mode == "CONNECTIVITY":
+        connectivity_workflow()
+      if diag_mode == "HEALTHCHECK":
+        healthcheck_workflow()
+      if diag_mode == "MYSQL_CONNECTION":
+        mysql_workflow()
 
-        if 'USER' in os.environ or 'PASSWORD' in os.environ or 'HOST' in os.environ or 'DATABASE' in os.environ:
+    else:
+      a_logger.debug("## Unable to identify infra AutoDiag is running on.")
+    
+    a_logger.debug("#### DIAG COMPLETE ####")
+    
+def general_workflow(infra, diag_mode):
+    env_vars = ''
+    a_logger.debug("## The environment variables set in the diag container are: ")
+
+    for var in os.environ:
+        env_vars = env_vars + var + "\n"
+
+    a_logger.debug(env_vars)
+
+    a_logger.debug("## DIAG_MODE = GENERAL. Performing GENERAL dignosis checks.")
+    if infra == "AWS_ECS_EC2":
+      ec2_checks()
+    
+    endpoints = get_ecs_endpoints(get_region())
+
+    #check connectivity to ECS service endpoints.
+    for endpoint in endpoints:
+      connectivity_tests(endpoint, 443)
+
+    if infra == "AWS_ECS_EC2":
+      check_logs()
+
+def connectivity_workflow():
+  endpoint = os.environ['ENDPOINT']
+
+  if 'PORT' in os.environ:
+
+    port = os.environ['PORT']
+    connectivity_tests(endpoint, port)
+
+  else:
+    a_logger.debug("There is no port specified. Please specify a port to test connectivity with.")
+
+def healthcheck_workflow():
+  a_logger.info("## DIAG_MODE = HEALTHCHECK. Performing 3 health checks with 10 seconds between each one.")
+
+  if 'ENDPOINT' in os.environ and 'PROTOCOL' in os.environ and 'PORT' in os.environ:
+
+    endpoint = os.environ['ENDPOINT']
+    protocol = os.environ['PROTOCOL']
+    port = os.environ['PORT']
+
+    healthchecks(endpoint, protocol,port)
+
+  if 'ENDPOINT' not in os.environ:
+    a_logger.debug("Please specify the ENDPOINT environment variable.")
+  if 'PROTOCOL' not in os.environ:
+    a_logger.debug("Please specify the PROTOCOL environment variable.")
+  if 'PORT' not in os.environ:
+    a_logger.debug("Please specify the PORT environment variable.")
+
+def mysql_workflow():
+  if 'USER' in os.environ or 'PASSWORD' in os.environ or 'HOST' in os.environ or 'DATABASE' in os.environ:
           user = os.environ['USER']
           password = os.environ['PASSWORD']
           host = os.environ['HOST']
           database = os.environ['DATABASE']
 
-        if 'USER' not in os.environ:
-          a_logger.debug("Please specify the PORT environment variable.")
-        if 'PASSWORD' not in os.environ:
-          a_logger.debug("Please specify the PASSWORD environment variable.")
-        if 'HOST' not in os.environ:
-          a_logger.debug("Please specify the HOST environment variable.")
-        if 'DATABASE' not in os.environ:
-          a_logger.debug("Please specify the DATABASE environment variable.")
-        
-
-          try:
-            cnx = mysql.connector.connect(user=user, password=password,
-                                host=host,
-                                database=database)
-            if cnx:
-              a_logger.info("Successfully connected to database: "+str(host))
-          except Exception as e:
-            a_logger.debug("Connecting to database "+database+" failed. "+str(e))
-
-
-    else:
-      a_logger.debug("## This is running on Fargate")
-      #fargate_checks()
-    
-    a_logger.debug("#### DIAG COMPLETE ####")
+  if 'USER' not in os.environ:
+    a_logger.debug("Please specify the PORT environment variable.")
+  if 'PASSWORD' not in os.environ:
+    a_logger.debug("Please specify the PASSWORD environment variable.")
+  if 'HOST' not in os.environ:
+    a_logger.debug("Please specify the HOST environment variable.")
+  if 'DATABASE' not in os.environ:
+    a_logger.debug("Please specify the DATABASE environment variable.")
+  
+  try:
+    cnx = mysql.connector.connect(user=user, password=password,
+                        host=host,
+                        database=database)
+    if cnx:
+      a_logger.info("Successfully connected to database: "+str(host))
+  except Exception as e:
+    a_logger.debug("Connecting to database "+database+" failed. "+str(e))
 
 def healthchecks(endpoint, protocol, port):
   dns_resol = dns_check(endpoint)
@@ -376,7 +394,7 @@ def get_latest_ecs_agent_log_file(path):
 
     latest_agent_log = "Path does not exist."
     return latest_agent_log
-    
+
   return latest_agent_log
 
 start()
