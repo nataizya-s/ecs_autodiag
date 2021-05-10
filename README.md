@@ -6,6 +6,7 @@ This project was designed to enable troubleshooting on the ECS infrastructure. T
 - ECS EC2 Launch Type
 
 # How to use AutoDiag [EC2 launch type]
+`!!! NOTE: The mounts are only needed if using the EC2 launch type.`
 1. When using the EC2 launch type, the task definition needs to have the mount points and volumes specified as can be seen in the `ec2-taskdefinition.json`:
 
 ```
@@ -48,6 +49,13 @@ This project was designed to enable troubleshooting on the ECS infrastructure. T
       }
     ]
 ```
+Details of these mounts and why they are needed can be found below:
+| Container Path | Host Path | Description | 
+| ------------- | ------------- | ------------- |
+| /var/run/docker.sock | /var/run/docker.sock | This will allow for autodiag to check if the agent container is running. |
+| /var/log | /var/log | This allows autodiag to access the logs on the instance. |
+| /etc/ecs | /etc/ecs | This allows autodiag to access the ECS agent configuration. |
+
 2. You can then create the task definition by running the following command:
 
 ``` 
@@ -139,51 +147,3 @@ In the above, please ensure to change the values of `ENDPOINT`, `PORT` and `PROT
 | DATABASE | `<database>` | The database name. | `HOST`, `PASSWORD`, `USER`, `MYSQL_CONNECTION` |
 | S3_LOGS_ENDPOINT | `<endpoint>` | The S3 logs uploader endpoint that the script should push the zip file to. This is shared by AWS Support. This feature is still being worked on. | N/A |
 
-## Task Definition
-The task definition needs to specify the environment variables and mounts. The environment variables are described in the `Environment variables` section. The bind mounts need to be specified as follows:
-`!!! NOTE: The mounts are only needed if using the EC2 launch type.`
-```
-"mountPoints": [
-          {
-            "containerPath": "/var/run/docker.sock",
-            "sourceVolume": "docker"
-          },
-          {
-            "containerPath": "/var/log",
-            "sourceVolume": "logs"
-          },
-          {
-            "containerPath": "/etc/config",
-            "sourceVolume": "config"
-          }
-        ],
-```
-With the associated volumes:
-```
-"volumes": [
-      {
-        "name": "docker",
-        "host": {
-          "sourcePath": "/var/run/docker.sock"
-        }
-      },
-      {
-        "name": "logs",
-        "host": {
-          "sourcePath": "/var/log"
-        }
-      },
-      {
-        "name": "config",
-        "host": {
-          "sourcePath": "/etc/ecs"
-        }
-      }
-    ]
-```
-Details of these mounts and why they are needed can be found below:
-| Container Path | Host Path | Description | 
-| ------------- | ------------- | ------------- |
-| /var/run/docker.sock | /var/run/docker.sock | This will allow for autodiag to check if the agent container is running. |
-| /var/log | /var/log | This allows autodiag to access the logs on the instance. |
-| /etc/ecs | /etc/ecs | This allows autodiag to access the ECS agent configuration. |
