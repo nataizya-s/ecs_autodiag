@@ -22,8 +22,12 @@
         "name": "autodiag"
       }
     ],
-    "family": "autodiag",
+    "family": "autodiag-fargate",
     "requiresCompatibilities": [
       "FARGATE"
-    ]
+    ],
+    "networkMode": "awsvpc",
+    "executionRoleArn": "arn:aws:iam::711192592489:role/ecsTaskExecutionRole",
+    "cpu": "512",
+    "memory": "512"
   }
