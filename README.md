@@ -69,8 +69,6 @@ $ aws ecs register-task-definition --cli-input-json file://fargate-taskdefinitio
 
 3. Ensure that the task execution role or container instance role that the task runs on has the permissions to access cloudwatch logs i.e. `logs:CreateLogStream` and `logs:PutLogEvents`. The ECS agent also needs to be configured to support the `awslogs` log driver. If using Fargate, ensure that the task execution role has the cloudwatch permissions. 
 
-4. If the `SECRETS` diag mode is going to be used, ensure that the task definition has a task IAM role with teh required permissions to access secrets. More information on this can be found in the [documentation]().
-
 All the diagnosis events will be streamed to the cloudwatch log stream for the task. 
 
 ## Example Use Cases
