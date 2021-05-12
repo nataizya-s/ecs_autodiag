@@ -178,8 +178,8 @@ $ aws ecs start-task \
 ```
 Replace the `<task_id>` with the task ID to filter the logs for. It is also possible to filter the logs for any other substring in place of the `task_id`.
 
-### Tasks unable to resolve endpoint
-To confirm if a DNS resolution issue is application specific or infrastructure related, the CONNECTIVITY diag mode can be used. This will test DNS resolution of the endpoint in addition to the connectivity. This also requires the `PORT` environment variable to be set. The environment variables for this use case are therefore:
+### Tasks unable to resolve endpoint or connect to a given endpoint
+To confirm if a DNS resolution or an endpoint connectivity issue is application specific or infrastructure related, the CONNECTIVITY diag mode can be used. This will test DNS resolution of the endpoint in addition to the connectivity. This also requires the `PORT` environment variable to be set. The environment variables for this use case are therefore:
 | Environment Variable Key | Environment Variable Value | Description | Required environmental variables | 
 | ------------- | ------------- | ------------- | ------------- |
 | DIAG_MODE | CONNECTIVITY | This checks endpoint and DNS tests for the specified endpoint in the ENDPOINT and PORT environment variables. | `ENDPOINT`, `PORT` |
