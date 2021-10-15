@@ -60,11 +60,11 @@ Details of these mounts and why they are needed can be found below:
 
 #### EC2
 ``` 
-$ aws ecs register-task-definition --cli-input-json file://ec2-taskdefinition.json
+aws ecs register-task-definition --cli-input-json file://ec2-taskdefinition.json
 ```
 #### Fargate
 ``` 
-$ aws ecs register-task-definition --cli-input-json file://fargate-taskdefinition.json
+aws ecs register-task-definition --cli-input-json file://fargate-taskdefinition.json
 ```
 
 3. Ensure that the task execution role or container instance role that the task runs on has the permissions to access cloudwatch logs i.e. `logs:CreateLogStream` and `logs:PutLogEvents`. The ECS agent also needs to be configured to support the `awslogs` log driver. If using Fargate, ensure that the task execution role has the cloudwatch permissions. 
@@ -78,7 +78,7 @@ In this case, you might need to be able to get logs from an instance but SSH acc
 
 #### EC2 Launch Type
 ```
-$ aws ecs start-task \
+aws ecs start-task \
     --cluster <cluster-name> \
     --task-definition autodiag:1 \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "GENERAL" } ] } ] }' \
@@ -106,7 +106,7 @@ Environment variables used in this case:
 
 #### EC2 Launch Type
 ```
-$ aws ecs start-task \
+aws ecs start-task \
     --cluster <cluster-name> \
     --task-definition autodiag:1 \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "HEALTHCHECK" }, { "name": "ENDPOINT", "value": "10.0.5.10/healthcheck"}, { "name": "PORT", "value": "80" }, { "name": "PROTOCOL", "value": "http" } ] } ] }' \
@@ -118,12 +118,12 @@ We use the StartTask API call here to be able to control exactly which container
 
 #### Fargate Launch Type
 ```
-$ aws ecs run-task \
+aws ecs run-task \
     --cluster <cluster-name> \
     --task-definition autodiag-fargate:1 \
     --launch-type "FARGATE" \
-    --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "HEALTHCHECK" }, { "name": "ENDPOINT", "value": "`10.0.5.10/healthcheck`"}, { "name": "PORT", "value": "`80`" }, { "name": "PROTOCOL", "value": "`http`" } ] } ] }' \
-    --network-configuration "awsvpcConfiguration={subnets=[`subnet-abcd1234`],securityGroups=[`sg-abcd1234`],assignPublicIp=`<ENABLED/DISABLED>`}"
+    --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "HEALTHCHECK" }, { "name": "ENDPOINT", "value": "<HEALTHCHECK-ENDPOINT>"}, { "name": "PORT", "value": "`<PORT>" }, { "name": "PROTOCOL", "value": "<PROTOCOL>" } ] } ] }' \
+    --network-configuration "awsvpcConfiguration={subnets=[<SUBNET>],securityGroups=[<SECURITY-GROUP>],assignPublicIp=<ENABLED/DISABLED>}"
 ```
 In the above, please ensure to change the values of `ENDPOINT`, `PORT` and `PROTOCOL`. In addition, ensure that the network configuration has the correct values specified for the `subnets`, `securityGroups` and `assignPublicIp`.
 
@@ -139,7 +139,7 @@ In the event that you want to test connectivity to a MySQL database, the followi
 
 #### EC2 Launch Type
 ```
-$ aws ecs start-task \
+aws ecs start-task \
     --cluster <cluster-name> \
     --task-definition autodiag:1 \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "MYSQL_CONNECTION" }, { "name": "USER", "value": "username"}, { "name": "PASSWORD", "value": "password" }, { "name": "HOST", "value": "host_endpoint" }, { "name": "DATABASE", "value": "database_name" } ] } ] }' \
@@ -147,12 +147,12 @@ $ aws ecs start-task \
 ```
 #### Fargate Launch Type
 ```
-$ aws ecs run-task \
+aws ecs run-task \
     --cluster <cluster-name> \
     --task-definition autodiag-fargate:1 \
     --launch-type "FARGATE" \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "MYSQL_CONNECTION" }, { "name": "USER", "value": "username"}, { "name": "PASSWORD", "value": "password" }, { "name": "HOST", "value": "host_endpoint" }, { "name": "DATABASE", "value": "database_name" } ] } ] }' \
-    --network-configuration "awsvpcConfiguration={subnets=[`subnet-abcd1234`],securityGroups=[`sg-abcd1234`],assignPublicIp=`<ENABLED/DISABLED>`}"
+    --network-configuration "awsvpcConfiguration={subnets=[<SUBNET>],securityGroups=[<SECURITY-GROUP>],assignPublicIp=<ENABLED/DISABLED>}"
 ```
 `!!!NOTE: Database credentials should be passed as secrets in production environments and should not be passed as plain text.`
 
@@ -170,7 +170,7 @@ Locate the container instance that the task is scheduled on and replace the `<co
 
 #### EC2 Launch Type
 ```
-$ aws ecs start-task \
+aws ecs start-task \
     --cluster <cluster-name> \
     --task-definition autodiag:1 \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "TASK" }, { "name": "TASK_ID", "value": "<task_id>"} ] } ] }' \
@@ -188,7 +188,7 @@ To confirm if a DNS resolution or an endpoint connectivity issue is application 
 
 #### EC2 Launch Type
 ```
-$ aws ecs start-task \
+aws ecs start-task \
     --cluster <cluster-name> \
     --task-definition autodiag:1 \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "CONNECTIVITY" }, { "name": "ENDPOINT", "value": "<endpoint>"}, { "name": "PORT", "value": "<port>"} ] } ] }' \
@@ -198,12 +198,12 @@ Be sure to replace the `<endpoint>` and `<port>` with the required values.
 
 #### Fargate Launch Type
 ```
-$ aws ecs run-task \
+aws ecs run-task \
     --cluster <cluster-name> \
     --task-definition autodiag-fargate:1 \
     --launch-type "FARGATE" \
     --overrides '{ "containerOverrides": [ { "name": "autodiag", "environment": [ { "name": "DIAG_MODE", "value": "CONNECTIVITY" }, { "name": "ENDPOINT", "value": "<endpoint>"}, { "name": "PORT", "value": "<port>"} ] } ] }' \
-    --network-configuration "awsvpcConfiguration={subnets=[`subnet-abcd1234`],securityGroups=[`sg-abcd1234`],assignPublicIp=`<ENABLED/DISABLED>`}"
+    --network-configuration "awsvpcConfiguration={subnets=[<SUBNET>],securityGroups=[<SECURITY-GROUP>],assignPublicIp=<ENABLED/DISABLED>}"
 ```
 Be sure to replace the `<endpoint>` and `<port>` with the required values. 
 
